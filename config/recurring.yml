@@ -1,0 +1,28 @@
+# examples:
+#   periodic_cleanup:
+#     class: CleanSoftDeletedRecordsJob
+#     queue: background
+#     args: [ 1000, { batch_size: 500 } ]
+#     schedule: every hour
+#   periodic_cleanup_with_command:
+#     command: "SoftDeletedRecord.due.delete_all"
+#     priority: 2
+#     schedule: at 5am every day
+
+# `production:` groups the recurring tasks that only run in the deployed
+# app -- Solid Queue's scheduler process reads this file and, whenever it
+# sees the app is booted in the `production` environment, sets up
+# whatever's listed underneath this key.
+production:
+  clear_solid_queue_finished_jobs:
+    command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
+    schedule: every hour at minute 12
+  # This re-creates the Python project's GitHub Actions cron
+  # (`0 13 * * *`, i.e. 1:00 PM UTC) inside the Rails app itself instead
+  # of relying on an external CI schedule -- Arizona doesn't observe
+  # daylight saving time, so it's always UTC-7, which makes 13:00 UTC a
+  # fixed 6:00 AM Arizona time year-round with no DST adjustment needed.
+  scrape_listings:
+    class: ScrapeListingsJob
+    queue: default
+    schedule: "0 13 * * *"

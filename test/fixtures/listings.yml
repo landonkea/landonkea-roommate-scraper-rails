@@ -1,0 +1,47 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+#
+# These aren't random placeholder rows -- each one exists to exercise a
+# specific piece of behavior the tests check: a high-scoring in-range
+# listing, a low-scoring one, and one priced outside the $200-$350 range
+# entirely, so tests can assert on filtering and sorting with real,
+# meaningful data instead of guessing at what "MyString" would do.
+
+# A strong match: private room, good price, high score -- should show up
+# first on the dashboard and should count toward the "good" total.
+great_room:
+  source: craigslist
+  source_id: "https://phoenix.craigslist.org/roo/great-room"
+  title: Private furnished room near ASU
+  price: 275.00
+  url: "https://phoenix.craigslist.org/roo/great-room"
+  location: Tempe
+  posted_date: 2026-08-19
+  score: 90
+  first_seen_at: 2026-08-19 06:00:00
+
+# A weak match: still in the valid price range, but a low score --
+# should NOT count toward the "good" total, and should sort after
+# great_room on the dashboard.
+mediocre_room:
+  source: padsplit
+  source_id: "https://www.padsplit.com/rooms-for-rent/listing/mediocre"
+  title: Shared room with couch in living room
+  price: 240.00
+  url: "https://www.padsplit.com/rooms-for-rent/listing/mediocre"
+  location: Phoenix
+  posted_date: 2026-08-19
+  score: 0
+  first_seen_at: 2026-08-19 06:00:00
+
+# Priced above MAX_PRICE (350) -- exists specifically to make sure the
+# `in_price_range` scope actually excludes it from totals/counts.
+overpriced_room:
+  source: spareroom
+  source_id: "https://www.spareroom.com/rooms-for-rent/overpriced_az"
+  title: Private room downtown Scottsdale
+  price: 500.00
+  url: "https://www.spareroom.com/rooms-for-rent/overpriced_az"
+  location: Scottsdale
+  posted_date: 2026-08-19
+  score: 65
+  first_seen_at: 2026-08-19 06:00:00

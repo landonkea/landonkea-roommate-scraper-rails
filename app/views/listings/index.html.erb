@@ -1,0 +1,85 @@
+<%# Sets the browser tab title for just this page, overriding the layout's default. %>
+<% content_for :title, "Roommate Scraper Dashboard" %>
+
+<div class="w-full pb-16">
+  <%# Page heading -- plain text, no framework needed for something this simple. %>
+  <h1 class="text-2xl font-bold text-gray-900">Roommate Scraper Dashboard</h1>
+  <%# One-line explainer so a first-time visitor knows what they're looking at. %>
+  <p class="mt-1 text-sm text-gray-600">Every listing found by the last scrape, best score first.</p>
+
+  <%# The summary line -- mirrors the "X total, Y good" line the Python version printed to the terminal after every run. %>
+  <p class="mt-4 text-sm text-gray-700">
+    <span class="font-semibold"><%= @total_count %></span> listings in the $<%= Listing::MIN_PRICE %>-$<%= Listing::MAX_PRICE %> range,
+    <span class="font-semibold text-green-700"><%= @good_count %></span> of them scored 50 or higher.
+  </p>
+
+  <%# The filter form -- a plain GET form so the filters show up right in the URL and are bookmarkable/shareable. %>
+  <%= form_with url: listings_path, method: :get, local: true, class: "mt-6 flex flex-wrap items-end gap-4 bg-white p-4 rounded-lg border border-gray-200" do %>
+    <div>
+      <%# Dropdown built from whatever sources actually exist in the database right now (set in the controller). %>
+      <label for="source" class="block text-xs font-medium text-gray-500">Source</label>
+      <select name="source" id="source" class="mt-1 block rounded border-gray-300 text-sm">
+        <option value="">All sources</option>
+        <% @sources.each do |source| %>
+          <%# `selected` re-checks whichever option matches the current filter, so the dropdown doesn't reset itself after submitting. %>
+          <option value="<%= source %>" <%= "selected" if params[:source] == source %>><%= source.titleize %></option>
+        <% end %>
+      </select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <%# Checkbox for the "good listings only" filter -- checked stays true across a re-submit the same way the dropdown does above. %>
+      <input type="checkbox" name="good" id="good" value="1" <%= "checked" if params[:good].present? %> class="rounded border-gray-300">
+      <label for="good" class="text-sm text-gray-700">Good listings only (score &ge; 50)</label>
+    </div>
+
+    <%# Plain submit button -- reloads the page with whatever filters were picked. %>
+    <button type="submit" class="rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700">Filter</button>
+    <%# Plain link back to the unfiltered view. %>
+    <%= link_to "Clear filters", listings_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
+  <% end %>
+
+  <%# The actual listings table. %>
+  <div class="mt-6 overflow-x-auto rounded-lg border border-gray-200 bg-white">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2 text-left font-semibold text-gray-600">Score</th>
+          <th class="px-4 py-2 text-left font-semibold text-gray-600">Price</th>
+          <th class="px-4 py-2 text-left font-semibold text-gray-600">Title</th>
+          <th class="px-4 py-2 text-left font-semibold text-gray-600">Location</th>
+          <th class="px-4 py-2 text-left font-semibold text-gray-600">Source</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <%# Looping over @listings (already sorted best-first by the controller) and rendering one row per listing. %>
+        <% @listings.each do |listing| %>
+          <tr class="hover:bg-gray-50">
+            <td class="px-4 py-2">
+              <%# Same green/yellow/orange score-band coloring the Discord embeds use, so the dashboard and the alerts agree visually. %>
+              <span class="inline-block rounded px-2 py-0.5 text-xs font-semibold <%= listing.score >= 70 ? "bg-green-100 text-green-800" : listing.score >= 50 ? "bg-yellow-100 text-yellow-800" : "bg-orange-100 text-orange-800" %>">
+                <%= listing.score %>/100
+              </span>
+            </td>
+            <td class="px-4 py-2 font-medium text-gray-900">$<%= number_with_precision(listing.price, precision: 0) %></td>
+            <td class="px-4 py-2">
+              <%# Links straight out to the original listing on whichever site it came from. %>
+              <%= link_to listing.title, listing.url, target: "_blank", rel: "noopener", class: "text-blue-700 hover:underline" %>
+            </td>
+            <td class="px-4 py-2 text-gray-600"><%= listing.location %></td>
+            <td class="px-4 py-2 text-gray-600"><%= listing.source.titleize %></td>
+          </tr>
+        <% end %>
+
+        <%# Empty state -- shown only when there's nothing to list, so the page doesn't just render a bare, confusing empty table. %>
+        <% if @listings.empty? %>
+          <tr>
+            <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+              No listings yet. The scraper hasn't run, or nothing matched your filters.
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
